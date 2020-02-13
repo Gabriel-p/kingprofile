@@ -1,0 +1,10 @@
+#
+# method: gridBF / optmRad
+# create_data: y / n
+#
+# Set the (CI, K_cp) resolution
+# xy_grid: int
+# Nrepeat: int
+#
+method   create_data   xy_grid   Nrepeat
+optmRad            n        20        10
