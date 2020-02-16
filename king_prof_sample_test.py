@@ -64,11 +64,14 @@ def main():
             kcp_rt_delta[i] += rt_vals
             CI_rc_delta[j] += rc_vals
             CI_rt_delta[j] += rt_vals
-            Nm_delta_rel[i][j] = np.median(Nm_vals)
-            kcp_delta_rel[i][j] = np.median(kcp_vals)
-            rc_delta_rel[i][j] = np.median(rc_vals)
-            rt_delta_rel[i][j] = np.median(rt_vals)
-            print(i, j, np.median(rc_vals))
+
+            # Why i,j are inverted below:
+            # pcolormesh() docs: "An array C with shape (nrows, ncolumns) is
+            # plotted with the column number as X and the row number as Y"
+            Nm_delta_rel[j][i] = np.median(Nm_vals)
+            kcp_delta_rel[j][i] = np.median(kcp_vals)
+            rc_delta_rel[j][i] = np.median(rc_vals)
+            rt_delta_rel[j][i] = np.median(rt_vals)
 
             elapsed += t.time() - start_t
             N_i += 1
@@ -77,13 +80,10 @@ def main():
             time_tot = ((N_tot * elapsed) / N_i)
             # Subtract the elapsed time to estimate the time left
             t_left = (time_tot - elapsed) / 60.
-            # print(
-            #     "{} ({:.1f} m) | kcp={:.2f} (rc={:.0f}), CI={:.2f}".format(
-            #         N_tot - N_i, t_left, kcp, rc, CI))
+            print(
+                "{} ({:.1f} m) | kcp={:.2f} (rc={:.0f}), CI={:.2f}".format(
+                    N_tot - N_i, t_left, kcp, rc, CI))
 
-        import pdb; pdb.set_trace()  # breakpoint e6de953b //
-
-    print(np.mean(all_rts), np.std(all_rts))
     writeRes(
         method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,
         CI_rt_delta, Nm_delta_rel, kcp_delta_rel, rc_delta_rel,

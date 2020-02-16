@@ -58,12 +58,18 @@ def gridBruteForce(rt0, rt_max, rt_rang, r_in, fd, N_memb):
     return rc, rt
 
 
-def optmRad(rt0, rt_max, r_in, fd, N_memb):
+def optmRad(rt0, rt_max, r_in, fd, N_memb, corr_fact=0.7):
     """
+    For some reason this method returns a radius that is around 70% of
+    the real r_t:
+
+    r_optm = 0.7 * r_t --> r_t = r_optm / 0.7
+
+    Hence, we apply the 'corr_fact' factor below.
     """
     rad_radii = np.linspace(5., rt_max, 500)
 
-    break_counter, data = 0, []
+    data = []
     for i, rad in enumerate(rad_radii):
 
         # Stars within radius.
@@ -73,12 +79,6 @@ def optmRad(rt0, rt_max, r_in, fd, N_memb):
 
         n_fl = fd * np.pi * rad**2
         n_memb = n_in_cl_reg - n_fl
-
-        # Break check
-        if n_memb <= 0. and i > .5 * len(rad_radii):
-            break_counter += 1
-            if break_counter > 3:
-                break
         data.append([rad, n_memb, n_fl])
 
     # rads, N_membs, N_field, CI
@@ -89,7 +89,7 @@ def optmRad(rt0, rt_max, r_in, fd, N_memb):
     N_membs = data[1] / data[1].max()
     N_field = data[2] / data[2].max()
     idx = np.argmax(N_membs - N_field)
-    rt_x = data[0][idx] * (1. / (1. - .31))
+    rt_x = data[0][idx] / corr_fact
 
     rt_rang = np.linspace(0., rt_x, 1000)
     i_ri = np.searchsorted(r_in, rt_x)

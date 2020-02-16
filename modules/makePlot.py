@@ -34,10 +34,10 @@ def main(
     ax.minorticks_on()
     ax.set_title(r"$\Delta r_{c}$")
     #
-    # norm = normRange(rc_delta)
-    # Xn, Yn, data_interp = data2Dinterp(xx_grid, yy_grid, rc_delta)
-    # plt.pcolormesh(Xn, Yn, data_interp, cmap=plt.cm.RdBu, norm=norm)
-    plt.pcolormesh(xx_grid, yy_grid, rc_delta, cmap=plt.cm.RdBu) # , norm=norm)
+    norm = normRange(rc_delta)
+    Xn, Yn, data_interp = data2Dinterp(xx_grid, yy_grid, rc_delta)
+    plt.pcolormesh(Xn, Yn, data_interp, cmap=plt.cm.RdBu, norm=norm)
+    # plt.pcolormesh(xx_grid, yy_grid, rc_delta, cmap=plt.cm.RdBu, norm=norm)
     plt.xlabel(r"$K_{cp}$")
     plt.ylabel(r"$CI$")
     cbar = plt.colorbar(pad=.01, fraction=.02, aspect=40)
@@ -45,6 +45,7 @@ def main(
 
     #
     ax = plt.subplot(gs[0:2, 2:4])
+    ax.minorticks_on()
     ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
     plt.boxplot(CI_rc_delta, positions=yy_grid, widths=.03)
     plt.axhline(0., color='g', linestyle='--')
@@ -54,9 +55,11 @@ def main(
     tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
     ax.set_xticks(tcks)
     ax.set_xticklabels(tcks)
+    plt.ylim(-1., 1.)
 
     #
     ax = plt.subplot(gs[0:2, 4:6])
+    ax.minorticks_on()
     ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
     plt.boxplot(kcp_rc_delta, positions=xx_grid, widths=.03)
     plt.axhline(0., color='g', linestyle='--')
@@ -66,6 +69,7 @@ def main(
     tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
     ax.set_xticks(tcks)
     ax.set_xticklabels(tcks)
+    plt.ylim(-1., 1.)
 
     #
     # ax = plt.subplot(gs[2:4, 0:2])
@@ -96,6 +100,7 @@ def main(
 
     #
     ax = plt.subplot(gs[2:4, 2:4])
+    ax.minorticks_on()
     ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
     plt.boxplot(CI_rt_delta, positions=yy_grid, widths=.03)
     plt.axhline(0., color='g', linestyle='--')
@@ -105,9 +110,11 @@ def main(
     tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
     ax.set_xticks(tcks)
     ax.set_xticklabels(tcks)
+    plt.ylim(-1., 1.)
 
     #
     ax = plt.subplot(gs[2:4, 4:6])
+    ax.minorticks_on()
     ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
     plt.boxplot(kcp_rt_delta, positions=xx_grid, widths=.03)
     plt.axhline(0., color='g', linestyle='--')
@@ -117,6 +124,7 @@ def main(
     tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
     ax.set_xticks(tcks)
     ax.set_xticklabels(tcks)
+    plt.ylim(-1., 1.)
 
     fig.tight_layout()
     if main_call:
@@ -155,7 +163,7 @@ def normRange(delta, mmin=-.5, mmax=.5):
 if __name__ == '__main__':
     import pickle
 
-    method = 'optmRad' #'gridBF'
+    method = 'optmRad' # 'gridBF'
     with open("../output/plot_{}.pickle".format(method), "rb") as f:
         method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,\
             CI_rt_delta, Nm_delta, kcp_delta, rc_delta, rt_delta =\
