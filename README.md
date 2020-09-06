@@ -6,6 +6,9 @@ parameters of a [King (1962)][1] profile.
 The first one is described in [Pieres et al. (2016)][2], and
 corresponds to maximizing the King profile likelihood through
 brute force applied on a grid.
+This method is divided into two: 'KP_2' and 'KP_4'. The former
+only fits the core and tidal radius, while the latter also fits
+the eccentricity and rotation angle.
 
 The second one I developed for ASteCA and estimates an "optimal"
 radius based on maximizing the (normalized) difference between the
@@ -16,7 +19,10 @@ for all values of `CI` if we average the `K_cp` factor (concentration
 parameter), and varies from ~0.22 to ~0.42 for the `K_cp`, averaging over
 the `CI`.
 
+## TODO
 
+1. Estimate the field density and number of members parameters from the data at each step, instead of fixing them.
+2. Make the center coordinates also free parameters?
 
 
 
