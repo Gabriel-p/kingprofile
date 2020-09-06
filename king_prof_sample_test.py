@@ -1,9 +1,6 @@
 
-from astropy.io import ascii
-from astropy.table import Table
-import pickle
 import numpy as np
-from modules import KPInvSamp
+from modules import IO
 from modules import methodCall
 from modules import makePlot
 import time as t
@@ -12,71 +9,86 @@ import time as t
 # Reproducibility
 # np.random.seed(12345)
 
+# Fixed synthetic cluster's parameters
+xmax, ymax = 2000., 2000.
+area_frame = xmax * ymax
+cl_cent = (.5 * xmax, .5 * ymax)
+rt_fix = 250.
 
-def main():
+
+def main(plotResults=False):
     """
     """
 
-    method, create_data, xy_grid, Nrepeat = readParams()
+    method, mode, corr_fact, N_clust, xy_grid, Nrepeat = IO.readParams()
 
-    # Fixed synthetic cluster's parameters
-    xmax, ymax = 2000., 2000.
-    area_frame = xmax * ymax
-    cx, cy = .5 * xmax, .5 * ymax
-    rt_fix = 250.
-    N_clust = 200
-
-    if create_data:
-        genSynthClusters(
-            rt_fix, xmax, ymax, cx, cy, N_clust, create_data, xy_grid, Nrepeat)
+    if mode == 'create_data':
+        IO.genSynthClusters(
+            method, mode, xy_grid, Nrepeat, xmax, ymax, cl_cent, rt_fix,
+            N_clust)
         return
     else:
-        xx_grid, yy_grid, Nrepeat, xy_data = genSynthClusters(
-            rt_fix, xmax, ymax, cx, cy, N_clust, create_data)
+        xx_grid, yy_grid, Nrepeat, xy_data, ecc_theta = IO.genSynthClusters(
+            method, mode, None, None, xmax, ymax, cl_cent, rt_fix,
+            N_clust)
 
-    Nm_delta_rel, kcp_delta_rel, rc_delta_rel, rt_delta_rel = [
-        np.empty((xx_grid.size, yy_grid.size)) for _ in range(4)]
-    kcp_rc_delta, kcp_rt_delta, CI_rc_delta, CI_rt_delta = [
-        [[] for _ in range(xy_grid)] for _ in range(4)]
+    Nm_delta_rel_median, rc_delta_rel_median, rt_delta_rel_median,\
+        ecc_delta_rel_median = [
+            np.empty((xx_grid.size, yy_grid.size)) for _ in range(4)]
+    rc_delta_rel, rt_delta_rel = [
+        [[] for _ in range(xy_grid)] for _ in range(2)]
     N_i, N_tot, elapsed, start_t = 0, xy_grid**2, 0., t.time()
-    all_rts = []
+
+    ecc_rel_all, theta_rel_all = [], []
     for i, kcp in enumerate(xx_grid):
         rc = rt_fix / 10 ** kcp
 
         for j, CI in enumerate(yy_grid):
-
-            Nm_vals, kcp_vals, rc_vals, rt_vals, = [], [], [], []
+            Nm_vals, rc_vals, rt_vals, ecc_vals = [], [], [], []
             for k in range(Nrepeat):
 
                 xy = np.array(xy_data[i][j][k]).T
 
-                N_mx, rc_x, rt_x = methodCall.main(
-                    method, area_frame, N_clust, cx, cy, rc, rt_fix, xy)
-                kcp_x = np.log10(rt_x / rc_x)
+                N_mx, rc_x, rt_x, ecc_x, theta_x = methodCall.main(
+                    method, area_frame, N_clust, cl_cent, rc, rt_fix, xy,
+                    corr_fact)
+                ecc, theta = ecc_theta[i][j][k]
+
+                if plotResults:
+                    resPlot(
+                        cl_cent, xy, rt_fix, ecc, theta, rt_x, ecc_x, theta_x)
 
                 Nm_vals.append((N_clust - N_mx) / N_clust)
-                kcp_vals.append((kcp - kcp_x) / kcp)
                 rc_vals.append((rc - rc_x) / rc)
                 rt_vals.append((rt_fix - rt_x) / rt_fix)
 
-            all_rts += rt_vals
-            kcp_rc_delta[i] += rc_vals
-            kcp_rt_delta[i] += rt_vals
-            CI_rc_delta[j] += rc_vals
-            CI_rt_delta[j] += rt_vals
+                if mode == 'KP_4':
+                    ecc_rel_all.append([ecc, (ecc - ecc_x) / ecc])
+                    theta_diff = abs(theta - theta_x)
+                    if theta_diff > 90.:
+                        theta_diff = 180. - theta_diff
+                    theta_rel_all.append([
+                        theta, theta_diff / max(0.01, abs(theta))])
+                    ecc_vals.append((ecc - ecc_x) / ecc)
+                else:
+                    theta_rel_all.append(0)
+                    ecc_vals.append(0)
+
+            rc_delta_rel[i] += rc_vals
+            rt_delta_rel[i] += rt_vals
 
             # Why i,j are inverted below:
             # pcolormesh() docs: "An array C with shape (nrows, ncolumns) is
             # plotted with the column number as X and the row number as Y"
-            Nm_delta_rel[j][i] = np.median(Nm_vals)
-            kcp_delta_rel[j][i] = np.median(kcp_vals)
-            rc_delta_rel[j][i] = np.median(rc_vals)
-            rt_delta_rel[j][i] = np.median(rt_vals)
+            Nm_delta_rel_median[j][i] = np.median(Nm_vals)
+            rc_delta_rel_median[j][i] = np.median(rc_vals)
+            rt_delta_rel_median[j][i] = np.median(rt_vals)
+            ecc_delta_rel_median[j][i] = np.median(ecc_vals)
 
             elapsed += t.time() - start_t
             N_i += 1
             start_t = t.time()
-            # Estimate the total ampunt of time this process will take
+            # Estimate the total amount of time this process will take
             time_tot = ((N_tot * elapsed) / N_i)
             # Subtract the elapsed time to estimate the time left
             t_left = (time_tot - elapsed) / 60.
@@ -84,83 +96,51 @@ def main():
                 "{} ({:.1f} m) | kcp={:.2f} (rc={:.0f}), CI={:.2f}".format(
                     N_tot - N_i, t_left, kcp, rc, CI))
 
-    writeRes(
-        method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,
-        CI_rt_delta, Nm_delta_rel, kcp_delta_rel, rc_delta_rel,
-        rt_delta_rel)
+    IO.writeRes(
+        method, xx_grid, yy_grid, Nm_delta_rel_median,
+        rc_delta_rel, rt_delta_rel,
+        rc_delta_rel_median, rt_delta_rel_median, ecc_delta_rel_median,
+        ecc_rel_all, theta_rel_all)
+
     makePlot.main(
-        method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,
-        CI_rt_delta, Nm_delta_rel, kcp_delta_rel, rc_delta_rel,
-        rt_delta_rel)
+        method, xx_grid, yy_grid, rc_delta_rel, rt_delta_rel,
+        rc_delta_rel_median, rt_delta_rel_median, ecc_delta_rel_median,
+        ecc_rel_all, theta_rel_all)
 
 
-def readParams():
+def resPlot(cl_cent, xy, rt, ecc, theta, r_rt, r_ecc, r_theta):
     """
     """
-    pars = ascii.read("params_input.dat")
-    create_data = True if pars['create_data'][0] == 'y' else False
+    import matplotlib.pyplot as plt
+    from matplotlib import patches as mpatches
+    ax = plt.subplot(111)
+    a2 = rt**2
+    b2 = a2 * (1. - ecc**2)
+    ellipse = mpatches.Ellipse(
+        xy=cl_cent, width=2. * np.sqrt(a2), height=2. * np.sqrt(b2),
+        angle=np.rad2deg(theta),
+        facecolor='None', edgecolor='green', linewidth=2, ls='--',
+        transform=ax.transData, zorder=6)
+    ax.add_patch(ellipse)
 
-    xy_grid, Nrepeat = int(pars['xy_grid'][0]), int(pars['Nrepeat'][0])
+    a2 = r_rt**2
+    b2 = a2 * (1. - r_ecc**2)
+    ellipse = mpatches.Ellipse(
+        xy=cl_cent, width=2. * np.sqrt(a2), height=2. * np.sqrt(b2),
+        angle=np.rad2deg(r_theta),
+        facecolor='None', edgecolor='black', linewidth=2,
+        transform=ax.transData, zorder=6)
+    ax.add_patch(ellipse)
 
-    return pars['method'][0], create_data, xy_grid, Nrepeat
-
-
-def genSynthClusters(
-    rt_fix, xmax, ymax, cx, cy, N_clust, create_data, xy_grid=None,
-        Nrepeat=None):
-    """
-    """
-    if create_data:
-
-        xx_grid = np.linspace(.04, .99, xy_grid)  # kcp
-        yy_grid = np.linspace(.04, .9, xy_grid)   # CI
-
-        xy_data = [[[
-            [] for _ in range(Nrepeat)] for _ in xx_grid] for _ in yy_grid]
-        for i, kcp in enumerate(xx_grid):
-            rc = rt_fix / 10 ** kcp
-
-            for j, CI in enumerate(yy_grid):
-
-                for k in range(Nrepeat):
-
-                    x_cl, y_cl, x_fl, y_fl = KPInvSamp.main(
-                        N_clust, CI, rc, rt_fix, xmax, ymax, cx, cy)
-
-                    xy_data[i][j][k] +=\
-                        x_cl.tolist() + x_fl.tolist(), y_cl.tolist() +\
-                        y_fl.tolist()
-
-        with open(r"xy_data.pickle", "wb") as output_file:
-            pickle.dump([xx_grid, yy_grid, Nrepeat, xy_data], output_file)
-        print("Syntetic clusters saved to file")
-
-    else:
-        # xy_data = np.load('xy_data.npz')
-        with open(r"xy_data.pickle", "rb") as input_file:
-            xx_grid, yy_grid, Nrepeat, xy_data = pickle.load(input_file)
-        print("Syntetic clusters read from file\n")
-
-        return xx_grid, yy_grid, Nrepeat, xy_data
-
-
-def writeRes(
-    method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,
-        CI_rt_delta, Nm_delta, kcp_delta, rc_delta_rel, rt_delta_rel):
-    """
-    """
-    with open("output/plot_{}.pickle".format(method), "wb") as f:
-        pickle.dump([
-            method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,
-            CI_rt_delta, Nm_delta, kcp_delta, rc_delta_rel, rt_delta_rel], f)
-
-    data_out = {
-        "Nm_delta": Nm_delta.flatten(), "rc_delta_rel": rc_delta_rel.flatten(),
-        "rt_delta_rel": rt_delta_rel.flatten()}
-    data_out = Table(data_out)
-    ascii.write(
-        data_out, "output/results_{}.dat".format(method), format="csv",
-        overwrite=True)
+    plt.scatter(*xy.T, c='k', s=15, alpha=.5)
+    # plt.scatter(*xy_clust, c='g', s=15, zorder=5)
+    # plt.scatter(*xy_in, c='r', s=5, zorder=1)
+    plt.axvline(1000.)
+    plt.axhline(1000.)
+    plt.scatter(*cl_cent, marker='x', c='r', s=30, zorder=7)
+    plt.xlim(cl_cent[0] - 2. * rt, cl_cent[0] + 2. * rt)
+    plt.ylim(cl_cent[1] - 2. * rt, cl_cent[1] + 2. * rt)
+    plt.show()
 
 
 if __name__ == '__main__':

@@ -7,124 +7,68 @@ import matplotlib.colors as mcolors
 
 
 def main(
-    method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,
-        CI_rt_delta, Nm_delta, kcp_delta, rc_delta, rt_delta, main_call=False):
+    method, xx_grid, yy_grid, rc_delta_rel, rt_delta_rel,
+    rc_delta_rel_median, rt_delta_rel_median, ecc_delta_rel_median,
+        ecc_rel_all, theta_rel_all, main_call=False):
     """
     """
+    fig = plt.figure(figsize=(20, 24))
+    gs = gridspec.GridSpec(8, 6)
 
-    #
-    fig = plt.figure(figsize=(20, 18))
-    gs = gridspec.GridSpec(6, 6)
+    tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
 
-    # ax = plt.subplot(gs[0:2, 0:2])
-    # ax.minorticks_on()
-    # ax.set_title(r"$\Delta N_{memb}$ [(True - Estimated) / True]")
-    # #
-    # norm = normRange(Nm_delta)
-    # Xn, Yn, data_interp = data2Dinterp(xx_grid, yy_grid, Nm_delta)
-    # plt.pcolormesh(Xn, Yn, data_interp, cmap=plt.cm.RdBu, norm=norm)
-    # # plt.pcolormesh(xx_grid, yy_grid, Nm_delta, cmap=plt.cm.RdBu, norm=norm)
-    # plt.xlabel(r"$K_{cp}$")
-    # plt.ylabel(r"$CI$")
-    # cbar = plt.colorbar(pad=.01, fraction=.02, aspect=40)
-    # cbar.ax.tick_params(labelsize=9)
-
-    #
+    # rc
+    # density map
     ax = plt.subplot(gs[0:2, 0:2])
-    ax.minorticks_on()
-    ax.set_title(r"$\Delta r_{c}$")
-    #
-    norm = normRange(rc_delta)
-    Xn, Yn, data_interp = data2Dinterp(xx_grid, yy_grid, rc_delta)
-    plt.pcolormesh(Xn, Yn, data_interp, cmap=plt.cm.RdBu, norm=norm)
-    # plt.pcolormesh(xx_grid, yy_grid, rc_delta, cmap=plt.cm.RdBu, norm=norm)
-    plt.xlabel(r"$K_{cp}$")
-    plt.ylabel(r"$CI$")
-    cbar = plt.colorbar(pad=.01, fraction=.02, aspect=40)
-    cbar.ax.tick_params(labelsize=9)
-
-    #
+    densMapPlot(ax, xx_grid, yy_grid, rc_delta_rel_median, "r_{c}")
+    # CI Box plot
     ax = plt.subplot(gs[0:2, 2:4])
-    ax.minorticks_on()
-    ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
-    plt.boxplot(CI_rc_delta, positions=yy_grid, widths=.03)
-    plt.axhline(0., color='g', linestyle='--')
-    plt.ylabel(r"$\Delta r_{c}$")
-    plt.xlabel(r"$CI$")
-    plt.xlim(.0, .95)
-    tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
-    ax.set_xticks(tcks)
-    ax.set_xticklabels(tcks)
-    plt.ylim(-1., 1.)
-
-    #
+    boxPlot(ax, yy_grid, rc_delta_rel, "r_{c}", "CI", tcks)
+    # kcp Box plot
     ax = plt.subplot(gs[0:2, 4:6])
-    ax.minorticks_on()
-    ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
-    plt.boxplot(kcp_rc_delta, positions=xx_grid, widths=.03)
-    plt.axhline(0., color='g', linestyle='--')
-    plt.ylabel(r"$\Delta r_{c}$")
-    plt.xlabel(r"$K_{cp}$")
-    plt.xlim(.0, 1.04)
-    tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
-    ax.set_xticks(tcks)
-    ax.set_xticklabels(tcks)
-    plt.ylim(-1., 1.)
+    boxPlot(ax, xx_grid, rc_delta_rel, "r_{c}", "kcp", tcks)
 
-    #
-    # ax = plt.subplot(gs[2:4, 0:2])
-    # ax.minorticks_on()
-    # ax.set_title(r"$\Delta k_{cp}$")
-    # #
-    # norm = normRange(kcp_delta)
-    # Xn, Yn, data_interp = data2Dinterp(xx_grid, yy_grid, kcp_delta)
-    # plt.pcolormesh(Xn, Yn, data_interp, cmap=plt.cm.RdBu, norm=norm)
-    # # plt.pcolormesh(xx_grid, yy_grid, kcp_delta, cmap=plt.cm.RdBu, norm=norm)
-    # plt.xlabel(r"$K_{cp}$")
-    # cbar = plt.colorbar(pad=.01, fraction=.02, aspect=40)
-    # cbar.ax.tick_params(labelsize=9)
-
-    #
+    # rt
+    # density map
     ax = plt.subplot(gs[2:4, 0:2])
-    ax.minorticks_on()
-    ax.set_title(r"$\Delta r_{t}$")
-    #
-    norm = normRange(rt_delta)
-    Xn, Yn, data_interp = data2Dinterp(xx_grid, yy_grid, rt_delta)
-    plt.pcolormesh(Xn, Yn, data_interp, cmap=plt.cm.RdBu, norm=norm)
-    # plt.pcolormesh(xx_grid, yy_grid, rt_delta, cmap=plt.cm.RdBu, norm=norm)
-    plt.xlabel(r"$K_{cp}$")
-    plt.ylabel(r"$CI$")
-    cbar = plt.colorbar(pad=.01, fraction=.02, aspect=40)
-    cbar.ax.tick_params(labelsize=9)
-
-    #
+    densMapPlot(ax, xx_grid, yy_grid, rt_delta_rel_median, "r_{t}")
+    # CI Box plot
     ax = plt.subplot(gs[2:4, 2:4])
-    ax.minorticks_on()
-    ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
-    plt.boxplot(CI_rt_delta, positions=yy_grid, widths=.03)
-    plt.axhline(0., color='g', linestyle='--')
-    plt.ylabel(r"$\Delta r_{t}$")
-    plt.xlabel(r"$CI$")
-    plt.xlim(.0, .95)
-    tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
-    ax.set_xticks(tcks)
-    ax.set_xticklabels(tcks)
-    plt.ylim(-1., 1.)
-
-    #
+    boxPlot(ax, yy_grid, rt_delta_rel, "r_{t}", "CI", tcks)
+    # kcp Box plot
     ax = plt.subplot(gs[2:4, 4:6])
-    ax.minorticks_on()
-    ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
-    plt.boxplot(kcp_rt_delta, positions=xx_grid, widths=.03)
-    plt.axhline(0., color='g', linestyle='--')
-    plt.ylabel(r"$\Delta r_{t}$")
-    plt.xlabel(r"$K_{cp}$")
-    plt.xlim(.0, 1.04)
-    tcks = [.1, .2, .3, .4, .5, .6, .7, .8, .9]
-    ax.set_xticks(tcks)
-    ax.set_xticklabels(tcks)
-    plt.ylim(-1., 1.)
+    boxPlot(ax, xx_grid, rt_delta_rel, "r_{t}", "kcp", tcks)
+
+    if method == 'KP_4':
+
+        def boxPlotArray(xvals, yvals, rmin, rmax, steps=11):
+            bp_vals = []
+            _range = np.linspace(rmin, rmax, steps)
+            for i, ra in enumerate(_range):
+                if i + 1 == steps:
+                    break
+                msk = (xvals >= ra) & (xvals < _range[i + 1])
+                bp_vals.append(yvals[msk])
+            yarr = np.array(bp_vals)
+            grid = .5 * (_range[1:] + _range[:-1])
+            return grid, yarr
+
+        ecc_t, ecc_rel = np.array(ecc_rel_all).T
+        theta_t, theta_rel = np.array(theta_rel_all).T
+
+        # ecc
+        ecc_steps, ecc_bp = boxPlotArray(ecc_t, ecc_rel, 0.4, 0.95)
+        _, theta_bp = boxPlotArray(ecc_t, theta_rel, 0.4, 0.95)
+        tcks = np.round(ecc_steps, 2)
+        # density map
+        ax = plt.subplot(gs[4:6, 0:2])
+        densMapPlot(ax, xx_grid, yy_grid, ecc_delta_rel_median, "ecc")
+        # ecc vs delta_ecc Box plot
+        ax = plt.subplot(gs[4:6, 2:4])
+        boxPlot(ax, ecc_steps, ecc_bp, "ecc", "ecc", tcks)
+        # ecc vs delta_theta Box plot
+        ax = plt.subplot(gs[4:6, 4:6])
+        boxPlot(ax, ecc_steps, theta_bp, r"\theta", "ecc", tcks, True)
 
     fig.tight_layout()
     if main_call:
@@ -133,6 +77,43 @@ def main(
         out_n = "output/king_lkl_{}.png".format(method)
     plt.savefig(out_n, dpi=150, bbox_inches='tight')
     print("Finished")
+
+
+def densMapPlot(ax, xx_grid, yy_grid, par_delta, p_n):
+    ax.minorticks_on()
+    ax.set_title(r"$\Delta " + p_n + r"$")
+    #
+    norm = normRange(par_delta)
+    Xn, Yn, data_interp = data2Dinterp(xx_grid, yy_grid, par_delta)
+    plt.pcolormesh(
+        Xn, Yn, data_interp, cmap=plt.cm.RdBu, norm=norm, shading='auto')
+    plt.xlabel(r"$K_{cp}$")
+    plt.ylabel(r"$CI$")
+    cbar = plt.colorbar(pad=.01, fraction=.02, aspect=40)
+    cbar.ax.tick_params(labelsize=9)
+
+
+def boxPlot(ax, xgrid, par_delta, p_n, pID, tcks, thetaplot=False):
+    ax.minorticks_on()
+    ax.grid(b=True, which='major', color='gray', linestyle=':', lw=.5)
+    plt.boxplot(par_delta, positions=xgrid, widths=.03)
+    plt.ylabel(r"$\Delta " + p_n + r"$")
+    if pID == 'CI':
+        plt.xlabel(r"$CI$")
+        plt.xlim(.0, .95)
+    elif pID == 'kcp':
+        plt.xlabel(r"$K_{cp}$")
+        plt.xlim(.0, 1.04)
+    elif pID == 'ecc':
+        plt.xlabel(r"$ecc$")
+        plt.xlim(tcks[0] - .05, tcks[-1] + .05)
+    ax.set_xticks(tcks)
+    ax.set_xticklabels(tcks)
+    if thetaplot:
+        plt.ylim(0., 1.)
+    else:
+        plt.axhline(0., color='g', linestyle='--')
+        plt.ylim(-1., 1.)
 
 
 def data2Dinterp(xx_grid, yy_grid, delta):
@@ -155,7 +136,7 @@ def normRange(delta, mmin=-.5, mmax=.5):
     #     vmin, vmax = delta.min(), delta.max()
     #     vcent = .5 * (vmin + vmax)
     vmin, vcent, vmax = mmin, 0., mmax
-    norm = mcolors.DivergingNorm(vcenter=vcent, vmin=vmin, vmax=vmax)
+    norm = mcolors.TwoSlopeNorm(vcenter=vcent, vmin=vmin, vmax=vmax)
 
     return norm
 
@@ -163,11 +144,12 @@ def normRange(delta, mmin=-.5, mmax=.5):
 if __name__ == '__main__':
     import pickle
 
-    method = 'optmRad' # 'gridBF'
+    method = 'KP_4'
     with open("../output/plot_{}.pickle".format(method), "rb") as f:
-        method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,\
-            CI_rt_delta, Nm_delta, kcp_delta, rc_delta, rt_delta =\
-            pickle.load(f)
+        method, xx_grid, yy_grid, rc_delta_rel, rt_delta_rel,\
+            rc_delta_rel_median, rt_delta_rel_median, ecc_delta_rel_median,\
+            ecc_rel_all, theta_rel_all = pickle.load(f)
     main(
-        method, xx_grid, yy_grid, kcp_rc_delta, kcp_rt_delta, CI_rc_delta,
-        CI_rt_delta, Nm_delta, kcp_delta, rc_delta, rt_delta, True)
+        method, xx_grid, yy_grid, rc_delta_rel, rt_delta_rel,
+        rc_delta_rel_median, rt_delta_rel_median, ecc_delta_rel_median,
+        ecc_rel_all, theta_rel_all, True)
