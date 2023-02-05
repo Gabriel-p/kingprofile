@@ -15,8 +15,13 @@ area_frame = xmax * ymax
 cl_cent = (.5 * xmax, .5 * ymax)
 rt_fix = 250.
 
+xmax, ymax = 4, 4.
+area_frame = xmax * ymax
+cl_cent = (0)
+rt_fix = 1.
 
-def main(plotResults=False):
+
+def main(plotResults=True):
     """
     """
 

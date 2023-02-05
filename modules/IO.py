@@ -46,24 +46,41 @@ def genSynthClusters(
             [] for _ in range(Nrepeat)] for _ in xx_grid] for _ in yy_grid]
         for i, kcp in enumerate(xx_grid):
             rc = rt_fix / 10 ** kcp
-            for j, CI in enumerate(yy_grid):
-                for k in range(Nrepeat):
+            # for j, CI in enumerate(yy_grid):
+            #     for k in range(Nrepeat):
+            CI = 0.001
 
-                    if method == 'KP_4':
-                        ecc = np.random.uniform(.4, .95)
-                        theta = np.random.uniform(-np.pi / 2., np.pi / 2.)
-                    else:
-                        ecc, theta = 0., 0.
-                    ecc_theta[i][j][k] += (ecc, theta)
+            if method == 'KP_4':
+                ecc = np.random.uniform(.5, .95)
+                theta = np.random.uniform(-np.pi / 2., np.pi / 2.)
+            else:
+                ecc, theta = 0., 0.
+            # ecc_theta[i][j][k] += (ecc, theta)
 
-                    x_cl, y_cl, x_fl, y_fl = KPInvSamp.main(
-                        method, N_clust, CI, rc, rt_fix, ecc, theta, xmax,
-                        ymax, cl_cent)
+            x_cl, y_cl, x_fl, y_fl = KPInvSamp.main(
+                method, N_clust, CI, rc, rt_fix, ecc, theta, xmax,
+                ymax, cl_cent)
 
-                    xy_data[i][j][k] +=\
-                        x_cl.tolist() + x_fl.tolist(), y_cl.tolist() +\
-                        y_fl.tolist()
+            print(ecc, theta)
+            from astropy.table import Table
+            N = len(x_cl)
+            Gmag = np.random.uniform(12, 20, N)
+            e_Gmag = np.random.uniform(0.0001, 0.003, N)
+            BP_RP = np.random.uniform(0, 0.3, N)
+            e_BP_RP = np.random.uniform(0.0001, 0.003, N)
+            _id = np.arange(N)
+            tt = Table()
+            tt['EDR3Name'], tt['GLON'], tt['GLAT'], tt['Gmag'], tt['e_Gmag'] =\
+                _id, x_cl, y_cl, Gmag, e_Gmag
+            tt['BP-RP'], tt['e_BP_RP'] = BP_RP, e_BP_RP
+            tt.write("./input/{:.4f}_{:.4f}".format(ecc, theta) + ".dat", format='csv')
+            breakpoint()
 
+                    # xy_data[i][j][k] +=\
+                    #     x_cl.tolist() + x_fl.tolist(), y_cl.tolist() +\
+                    #     y_fl.tolist()
+
+        breakpoint()
         with open(in_file, "wb") as output_file:
             pickle.dump([xx_grid, yy_grid, Nrepeat, xy_data, ecc_theta],
                         output_file)
